@@ -1,19 +1,19 @@
 <template>
     <div>
 
-        <b-container fluid class="bv-example-row">
+        <b-container fluid class="mt-3">
             <b-row>
                 <b-col>
-                    <b-form @submit="searchCep">
+                    <b-form @submit="searchZipCode">
                         <b-form-group
-                                id="exampleInputGroup1"
+                                id="zipcodeGroup"
                                 label="Procure por endereços"
-                                label-for="exampleInput1"
+                                label-for="zipcodeInput"
                                 description="Busque pelo CEP e visualize abaixo as informações de endereço">
                             <b-form-input
                                     id="cep"
                                     type="tel"
-                                    v-model="form.cep"
+                                    v-model="form.zipcode"
                                     v-mask="'#####-###'"
                                     required
                                     placeholder="Digite o CEP"/>
@@ -27,7 +27,7 @@
                                   variant="primary"
                                   :disabled="isLoading">
                             <span v-if="!isLoading">Procurar</span>
-                            <span v-else>Procurando...</span>
+                            <b-spinner small v-else/>
                         </b-button>
                     </b-form>
                 </b-col>
@@ -51,30 +51,47 @@
         data() {
             return {
                 form: {
-                    cep: ''
+                    zipcode: ''
                 },
                 error: null,
                 isLoading: false
             }
         },
+        mounted() {
+            this.searchStaticZipCodes();
+        },
         methods: {
-            searchCep(e) {
+            searchZipCode(e) {
                 e.preventDefault();
 
-                if (!this.form.cep || this.form.cep.length !== 9) return
+                if (!this.form.zipcode || this.form.zipcode.length !== 9) return
 
                 this.isLoading = true
 
-                cepService.doGet(this.form.cep)
+                cepService.doGet(this.form.zipcode)
                     .then((res) => {
                         this.error = res.data.erro
                         this.isLoading = false
-                        if (!this.error) PubSub.publish('updateList', res.data)
+                        if (!this.error) this.publish(res.data)
                     })
                     .catch((err) => {
                         this.error = err
                         this.isLoading = false
                     })
+            },
+            searchStaticZipCodes() {
+                const zipcodes = []
+                for (let i = 1; i <= 10; i++) {
+                    zipcodes.push(`04104-0${i}0`)
+                }
+                cepService.doGetList(zipcodes)
+                    .then(this.bindZipCodes)
+            },
+            bindZipCodes(addressesPromises) {
+                addressesPromises.addresses.map((item) => item.then((res) => this.publish(res.data)))
+            },
+            publish(address) {
+                PubSub.publish('updateList', address)
             }
         }
     }
