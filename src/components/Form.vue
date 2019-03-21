@@ -24,7 +24,7 @@
                         </b-alert>
 
                         <b-button type="submit"
-                                  variant="primary"
+                                  variant="info"
                                   :disabled="isLoading">
                             <span v-if="!isLoading">Procurar</span>
                             <b-spinner small v-else/>
@@ -59,6 +59,7 @@
         },
         mounted() {
             this.searchStaticZipCodes();
+            this.subscribe();
         },
         methods: {
             searchZipCode(e) {
@@ -92,6 +93,9 @@
             },
             publish(address) {
                 PubSub.publish('updateList', address)
+            },
+            subscribe(){
+                PubSub.subscribe('editListItem', (msg, zipcode) => this.form.zipcode = zipcode)
             }
         }
     }
